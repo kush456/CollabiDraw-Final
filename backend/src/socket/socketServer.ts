@@ -17,12 +17,18 @@ export const setupSocketServer = (io: IOServer) => {
 
       // Create a mock request object for token verification
       const mockReq = { headers: { authorization: `Bearer ${token}` } };
-      const mockRes = {};
+      const mockRes = {}; // Empty object since we'll handle errors differently
       
       await new Promise((resolve, reject) => {
         verifyFirebaseToken(mockReq as any, mockRes, (err?: any) => {
-          if (err) reject(err);
-          else {
+          if (err) {
+            // Handle specific Firebase auth errors
+            if (err.message.includes("expired")) {
+              reject(new Error("Token expired. Please refresh and try again."));
+            } else {
+              reject(new Error("Authentication failed: " + err.message));
+            }
+          } else {
             socket.user = (mockReq as any).user;
             resolve(true);
           }
@@ -32,7 +38,8 @@ export const setupSocketServer = (io: IOServer) => {
       next();
     } catch (error) {
       console.error("Socket authentication error:", error);
-      next(new Error("Authentication failed"));
+      // Pass the specific error message to the client
+      next(error instanceof Error ? error : new Error("Authentication failed"));
     }
   });
 

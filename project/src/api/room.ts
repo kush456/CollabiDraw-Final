@@ -2,6 +2,7 @@
 import axios from "axios";
 import { auth } from "../lib/firebase";
 import LZString from "lz-string";
+import { makeAuthenticatedRequest } from "../auth/authUtils";
 
 export const saveRoom = async (roomData: {
   roomName: string;
@@ -9,28 +10,19 @@ export const saveRoom = async (roomData: {
   password?: string;
   canvasData: object;
 }) => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("User not logged in");
-
-  const idToken = await user.getIdToken();
-
   // Compress canvas data and encode to Base64 to ensure safe storage
   const compressedCanvasData = LZString.compressToBase64(JSON.stringify(roomData.canvasData));
   console.log('🔧 Compressed canvas data (Base64):', compressedCanvasData?.substring(0, 100) + '...');
 
-  const response = await axios.post(
-    `${import.meta.env.VITE_BACKEND_URL}/rooms/create`,
-    {
+  const response = await makeAuthenticatedRequest({
+    method: 'post',
+    url: `${import.meta.env.VITE_BACKEND_URL}/rooms/create`,
+    data: {
       ...roomData,
       canvasData: compressedCanvasData,
       isCompressed: true
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
     }
-  );
+  });
 
   return response.data; // returns { roomId: string }
 };

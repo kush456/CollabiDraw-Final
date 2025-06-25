@@ -106,15 +106,15 @@ function HomePage() {
       return () => clearTimeout(timer);
     }
   }, [redoState]);  // Load room data if roomId is present
-  useEffect(() => {
-    if (roomId) {
+  useEffect(() => {    if (roomId) {
       loadRoomData();      // Join the socket room with authentication for real-time collaboration
       const joinRoom = async () => {
         if (user) {
           try {
             const currentUser = auth.currentUser;
             if (currentUser) {
-              const token = await currentUser.getIdToken();
+              // Get a fresh token to avoid expired token issues
+              const token = await currentUser.getIdToken(true);
               socket.auth = { token };
               socket.connect();
               socket.emit('join-room', roomId);
