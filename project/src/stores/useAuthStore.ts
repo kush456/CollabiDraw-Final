@@ -37,16 +37,20 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
-      },
-
-      logout: async () => {
+      },      logout: async () => {
         try {
           await auth.signOut();
+          // Clear auth store
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
           });
+          
+          // Import and clear rooms store
+          const { useRoomsStore } = await import('@/stores/useRoomsStore');
+          useRoomsStore.getState().clearRooms();
+          
         } catch (error) {
           console.error('Error signing out:', error);
         }
